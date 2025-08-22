@@ -216,8 +216,10 @@ const sendPushToUser = async (userId, pushRequest) => {
     let content = await _preparePushContent(userId, pushRequest);
 
     // 2. 푸시 발송을 위한 사전 조건 확인
-    const pushToken = await _getPushToken(userId);
-    const policy = await _checkPushPolicy(userId, content.article_type);
+    const [pushToken, policy] = await Promise.all([
+        _getPushToken(userId),
+        _checkPushPolicy(userId, content.article_type),
+    ]);
 
     // 3. 미확인 메시지 수 확인 및 메시지 강화
     content = await _enhanceMessageWithUnsentCount(userId, content, policy);
