@@ -215,47 +215,50 @@ const sendPushToUser = async (userId, pushRequest) => {
     // 1. 푸시 콘텐츠 준비
     let content = await _preparePushContent(userId, pushRequest);
 
-    // 2. 푸시 토큰 조회
-    const pushToken = await _getPushToken(userId);
+    // 2. 푸시 발송을 위한 사전 조건 확인
+    const [pushToken, policy] = await Promise.all([
+        _getPushToken(userId),
+        _checkPushPolicy(userId, content.article_type),
+    ]);
 
-    // 3. 푸시 발송 시도 로깅
+    // 3. 미확인 메시지 수 확인 및 메시지 강화
+    content = await _enhanceMessageWithUnsentCount(userId, content, policy);
+
+    // 4. 푸시 발송 시도 로깅
     const logIds = await _logPushAttempt(userId, title, content);
 
-    // 4. 푸시 토큰 유무 확인
+    // 5. 푸시 토큰 유무 확인
     if (!pushToken) {
         const reason = '푸시 거부(토큰 없음)';
         await _updatePushResultLog(logIds, reason, false);
         return { message: reason };
     }
 
-    // 5. 푸시 발송 정책 확인
-    const policy = await _checkPushPolicy(userId, content.article_type);
+    // 6. 푸시 발송 정책 확인
     if (!policy.isAllowed) {
         await _updatePushResultLog(logIds, policy.reason, false);
         return { message: policy.reason };
     }
 
-    // 6. 미확인 메시지 수 확인 및 메시지 강화
-    content = await _enhanceMessageWithUnsentCount(userId, content, policy);
-
-    // 7. FCM 페이로드 생성 및 발송
+    // 7. FCM 페이로드 생성
     const payload = pushUtil.payload({
         uuid: { token: pushToken }, 
         content
     });
 
     try {
+        // 8. FCM 메시지 발송
         const response = await pushUtil.sendFcmMessage(payload);
 
-        // 8. 성공 결과 로깅
+        // 9. 성공 결과 로깅
         await _updatePushResultLog(logIds, response, response !== 'timeover' ? true : false);
 
         return { messageId: response };
     } catch (error) {
-        // 9. FCM 발송 실패 시 로깅
+        // 10. FCM 발송 실패 시 로깅
         await _updatePushResultLog(logIds, error.message, false);
 
-        // 10. FCM 에 등록된 유효한 토큰이 아닐 경우 회원 푸시 토큰 삭제
+        // 11. FCM 에 등록된 유효한 토큰이 아닐 경우 회원 푸시 토큰 삭제
         if (error.code === 'messaging/registration-token-not-registered') {
             await pushDao.deleteUserPush(userId);
         }
@@ -266,26 +269,28 @@ const sendPushToUser = async (userId, pushRequest) => {
 }
 
 const sendPushToMultipleUsers = async (userIds, pushRequest) => {
-    const { title, message, article_type, article_id, image } = pushRequest;
-
     // 1. 유효한 푸시 대상 목록 조회
     const validTargets = await _getValidPushTargets(userIds);
 
+    // 2. 푸시 대상자 확인
     if (validTargets.length === 0) {
         return { total: userIds.length, success: 0, failure: userIds.length, message: '푸시를 보낼 수 있는 유효한 대상이 없습니다.' };
     }
 
+    // 3. 푸시 토큰 반환
     const tokens = validTargets.map(t => t.push_token);
 
+    // 4. 푸시 컨텐츠 준비
     const content = await _preparePushContent(userIds, pushRequest);
 
-    // 6. FCM 페이로드 생성 및 발송
+    // 5. FCM 페이로드 생성
     const payload = pushUtil.payload({
         uuid: { tokens },
         content
     });
 
     try {
+        // 6. FCM 메시지 발송
         const response = await pushUtil.sendFcmMessage(payload);
 
         return { messageId: response };
@@ -296,14 +301,17 @@ const sendPushToMultipleUsers = async (userIds, pushRequest) => {
 }
 
 const sendPushToTopic = async (topic, pushRequest) => {
+    // 1. 푸시 컨텐츠 준비
     const content = await _preparePushContent(topic, pushRequest);
 
+    // 2. FCM 페이로드 생성
     const payload = pushUtil.payload({
         uuid: { topic },
         content
     });
 
     try {
+        // 3. FCM 메시지 발송
         const response = await pushUtil.sendFcmMessage(payload);
 
         return { messageId: response };
