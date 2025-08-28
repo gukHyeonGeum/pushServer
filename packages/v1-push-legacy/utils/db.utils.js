@@ -1,4 +1,5 @@
 const mysql = require('mysql');
+const path = require('path');
 const mybatisMapper = require('mybatis-mapper');
 const glob = require('glob');
 

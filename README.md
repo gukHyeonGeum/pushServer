@@ -12,14 +12,14 @@ Firebase Admin SDK를 사용하여 FCM(Firebase Cloud Messaging)을 통해 사�
 teeshotAdminPushManager/
 ├── packages/
 │   ├── v1-push-legacy/       # 레거시 Express.js 기반의 v1 푸시 서비스
-│	  │	  ├── __tests__/        # Jest 테스트 파일 (단위 & 통합 테스트)
-│	  │	  ├── daos/             # 데이터베이스와 직접 통신하는 DAO(Data Access Object) 계층
-│	  │	  ├── mappers/          # mybatis-mapper를 위한 SQL 쿼리 XML 파일
-│	  │	  ├── routes/           # Express 라우터 정의 (API 엔드포인트)
-│	  │	  ├── services/         # 비즈니스 로직을 처리하는 서비스 계층
-│	  │	  ├── utils/            # DB, Redis, 비동기 핸들러 등 공통 유틸리티 모듈	
-│	  │	  ├── .env              # 환경 변수 파일 (DB 접속 정보, 포트 등)
-│	  │ 	├── app.js            # 애플리케이션 메인 진입점
+│   │   ├── __tests__/        # Jest 테스트 파일 (단위 & 통합 테스트)
+│   │   ├── daos/             # 데이터베이스와 직접 통신하는 DAO(Data Access Object) 계층
+│   │   ├── mappers/          # mybatis-mapper를 위한 SQL 쿼리 XML 파일
+│   │   ├── routes/           # Express 라우터 정의 (API 엔드포인트)
+│   │   ├── services/         # 비즈니스 로직을 처리하는 서비스 계층
+│   │   ├── utils/            # DB, Redis, 비동기 핸들러 등 공통 유틸리티 모듈	
+│   │   ├── .env              # 환경 변수 파일 (DB 접속 정보, 포트 등)
+│   │   ├── app.js            # 애플리케이션 메인 진입점
 │   ├── v2-push-next/         # 차세대 NestJS + Prisma 기반의 v2 푸시 서비스
 │   └── common-utils/         # v1과 v2가 공유하는 공통 유틸리티 패키지
 ├── .gitignore
