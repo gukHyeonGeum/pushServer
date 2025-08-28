@@ -1,5 +1,7 @@
 const mysql = require('mysql');
+const path = require('path');
 const mybatisMapper = require('mybatis-mapper');
+const glob = require('glob');
 
 const read_conn = mysql.createPool({
 	multipleStatements: true,
@@ -25,13 +27,9 @@ const write_conn = mysql.createPool({
 	waitForConnections:true
 });
 
-mybatisMapper.createMapper([
-    './mappers/readmapper/user.readmapper.xml',
-    './mappers/iomapper/user.iomapper.xml',
-    './mappers/readmapper/pushmngr.readmapper.xml',
-    './mappers/iomapper/pushmngr.iomapper.xml',
-    './mappers/readmapper/common.readmapper.xml',
-]);
+const mapperPath = path.join(__dirname, '../mappers/**/*.xml');
+const mapperFiles = glob.sync(mapperPath);
+mybatisMapper.createMapper(mapperFiles);
 
 function getPoolForMapper(mapper) {
     return mapper.toLowerCase().endsWith('iomapper') ? write_conn : read_conn;

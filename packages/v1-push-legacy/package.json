@@ -1,0 +1,24 @@
+{
+    "name": "v1-push-legacy",
+    "version": "1.0.0",
+    "description": "Legacy Express push service",
+    "main": "app.js",
+    "dependencies": {
+    "@push/common-utils": "1.0.0",
+    "cors": "^2.8.5",
+    "date-and-time": "4.0.2",
+    "dotenv": "^16.0.2",
+    "express": "^4.17.1",
+    "firebase-admin": "^11.7.0",
+    "glob": "^11.0.3",
+    "mybatis-mapper": "^0.6.8",
+    "mysql": "^2.17.1",
+    "redis": "^5.8.1"
+    },
+    "scripts": {
+    "dev": "node app.js",
+    "test": "jest --watchAll"
+    },
+    "author": "",
+    "license": "ISC"
+}

@@ -1,13 +1,34 @@
-## 0. 푸시 서버 개선
-- 테스트 코드 작성으로 빠른 검증 및 안정성 확보
-- 리팩토링 (콜백 지옥의 비동기 코드들을 async/await로 비동기 처리하여 가독성, 유지보수성 향상) 
-- Redis 캐싱 (반복적인 조회를 메모리에서 매우 빠르게 처리하여 성능 향상과 DB 부하 감소)
+# 푸시 서비스 모노레포
+
+레거시 v1(Express) 시스템과 차세대 v2(NestJS) 시스템을 함께 관리하기 위해 Turborepo를 사용한 모노레포로 구성되어 있습니다.
 
 ## 1. 프로젝트 개요
 이 프로젝트는 서비스의 푸시 알림을 전문적으로 처리하기 위해 설계된 Node.js 기반의 마이크로서비스입니다. 
 Firebase Admin SDK를 사용하여 FCM(Firebase Cloud Messaging)을 통해 사용자에게 효율적이고 안정적으로 푸시 메시지를 발송하는 역할을 담당합니다.
 
-## 2. 주요 기능 및 특징
+## 2. 프로젝트 구조
+
+```
+teeshotAdminPushManager/
+├── packages/
+│   ├── v1-push-legacy/       # 레거시 Express.js 기반의 v1 푸시 서비스
+│   │   ├── __tests__/        # Jest 테스트 파일 (단위 & 통합 테스트)
+│   │   ├── daos/             # 데이터베이스와 직접 통신하는 DAO(Data Access Object) 계층
+│   │   ├── mappers/          # mybatis-mapper를 위한 SQL 쿼리 XML 파일
+│   │   ├── routes/           # Express 라우터 정의 (API 엔드포인트)
+│   │   ├── services/         # 비즈니스 로직을 처리하는 서비스 계층
+│   │   ├── utils/            # DB, Redis, 비동기 핸들러 등 공통 유틸리티 모듈	
+│   │   ├── .env              # 환경 변수 파일 (DB 접속 정보, 포트 등)
+│   │   ├── app.js            # 애플리케이션 메인 진입점
+│   ├── v2-push-next/         # 차세대 NestJS + Prisma 기반의 v2 푸시 서비스
+│   └── common-utils/         # v1과 v2가 공유하는 공통 유틸리티 패키지
+├── .gitignore
+├── package.json
+├── turbo.json
+└── README.md                
+```
+
+## 3. 주요 기능 및 특징
 - 다양한 푸시 발송 방식 지원
   - 단일 사용자 발송: 특정 사용자 한 명에게 푸시를 보냅니다.
   - 다중 사용자 발송: 여러 명의 사용자에게 동시에 푸시를 보냅니다. (Multicast)
@@ -34,21 +55,6 @@ Firebase Admin SDK를 사용하여 FCM(Firebase Cloud Messaging)을 통해 사�
 
 - 확장성을 고려한 설계
   - pm2의 클러스터 모드를 사용하여 멀티 코어 CPU를 최대한 활용하고, 무중단 서비스(Zero-downtime)를 지원하도록 설계되었습니다.
- 
-## 3. 프로젝트 구조
-
-```
-/
-├── __tests__/          # Jest 테스트 파일 (단위 & 통합 테스트)
-├── daos/               # 데이터베이스와 직접 통신하는 DAO(Data Access Object) 계층
-├── mappers/            # mybatis-mapper를 위한 SQL 쿼리 XML 파일
-├── routes/             # Express 라우터 정의 (API 엔드포인트)
-├── services/           # 비즈니스 로직을 처리하는 서비스 계층
-├── utils/              # DB, Redis, 비동기 핸들러 등 공통 유틸리티 모듈
-├── .env                # 환경 변수 파일 (DB 접속 정보, 포트 등)
-├── app.js              # 애플리케이션 메인 진입점
-└── ecosystem.config.js # PM2 클러스터 모드 설정 파일
-```
 
 ## 4. API 엔드포인트
 
@@ -57,3 +63,58 @@ Firebase Admin SDK를 사용하여 FCM(Firebase Cloud Messaging)을 통해 사�
 | GET | /push/send | 단일 사용자에게 푸시를 발송합니다. | Query Parameter: params (URL 인코딩된 JSON 문자열) {"uuid":123, "title":"...", "message":"...", ...} |
 | POST | /push/multisend | 여러 사용자에게 푸시를 발송합니다. | Body: {"uuid":[123, 456], "title":"...", "message":"...", ...} |
 | POST | /push/topicsend | 특정 토픽을 구독한 사용자에게 푸시를 발송합니다. | Body: {"uuid":"topic_name", "title":"...", "message":"...", ...} |
+
+
+# 시작하기
+
+### 사전 준비
+
+1.  **Node.js**: v20.x 이상 버전을 사용해주세요. (`nvm` 사용을 권장)
+2.  **npm**: v10.x 이상 버전을 사용해주세요.
+3.  **환경 변수**: 프로젝트 루트에 `.env` 파일을 생성하고, 필요한 환경 변수(DB 접속 정보, API 키 등)를 설정해야 합니다. (`.env.example` 파일을 참고하세요.)
+
+### 설치
+
+프로젝트의 **루트 디렉토리**에서 아래 명령어를 실행하여 모든 패키지의 의존성을 한 번에 설치합니다.
+
+```bash
+npm install
+```
+
+## 개발 환경 실행
+
+Turborepo를 사용하여 모든 패키지의 개발 서버를 동시에 실행하거나, 개별적으로 실행할 수 있습니다.
+
+### 전체 동시 실행
+
+```bash
+# v1, v2 개발 서버를 동시에 실행합니다.
+npm run dev
+```
+
+### 개별 실행
+
+```bash
+# v1 (Express) 개발 서버만 실행
+npm run dev -- --filter=v1-push-legacy
+
+# v2 (NestJS) 개발 서버만 실행
+npm run dev -- --filter=v2-push-next
+```
+
+## 테스트
+
+```bash
+# 모든 패키지의 테스트를 실행합니다.
+npm run test
+
+# 특정 패키지의 테스트만 실행합니다.
+npm run test -- --filter=v2-push-next
+```
+
+## 빌드
+
+```bash
+# 모든 패키지를 빌드합니다. (캐싱 기능으로 변경된 패키지만 빌드됩니다.)
+npm run build
+```
